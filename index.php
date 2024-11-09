@@ -35,8 +35,14 @@
             xhr.send(formData);
         }
     </script>
-</head>
+    <link rel="stylesheet" href="style.css">
+    </head>
 <body>
+<nav class="navbar">
+        <a href="index.php"><i class="fas fa-upload"></i> Upload</a>
+        <a href="list.php"><i class="fas fa-list"></i> Video List</a>
+        <a href="admin.php?admin=true"><i class="fas fa-user-shield"></i> Admin</a>
+    </nav>
     <h2>Upload Video</h2>
     <form onsubmit="event.preventDefault(); uploadFile();">
         <label>Title: <input type="text" id="title" required></label><br>
