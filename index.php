@@ -1,57 +1,52 @@
+
+<?php include 'db.php'; ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Upload Video</title>
-    <script>
-        function uploadFile() {
-            var fileInput = document.getElementById("video");
-            var thumbnailInput = document.getElementById("thumbnail");
-            var formData = new FormData();
-            formData.append("video", fileInput.files[0]);
-            formData.append("thumbnail", thumbnailInput.files[0]);
-            formData.append("title", document.getElementById("title").value);
-            formData.append("description", document.getElementById("description").value);
-
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", "upload.php", true);
-
-            xhr.upload.addEventListener("progress", function(event) {
-                if (event.lengthComputable) {
-                    var percent = (event.loaded / event.total) * 100;
-                    document.getElementById("progress").value = percent;
-                    document.getElementById("progress_text").innerText = Math.round(percent) + "%";
-                }
-            });
-
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    alert("Video uploaded successfully");
-                    window.location.href = 'list.php';
-                } else {
-                    alert("Upload failed");
-                }
-            };
-            xhr.send(formData);
-        }
-    </script>
+    <title>Video List</title>
     <link rel="stylesheet" href="style.css">
-    </head>
+</head>
 <body>
-<nav class="navbar">
-        <a href="index.php"><i class="fas fa-upload"></i> Upload</a>
-        <a href="list.php"><i class="fas fa-list"></i> Video List</a>
-        <a href="admin.php?admin=true"><i class="fas fa-user-shield"></i> Admin</a>
-    </nav>
-    <h2>Upload Video</h2>
-    <form onsubmit="event.preventDefault(); uploadFile();">
-        <label>Title: <input type="text" id="title" required></label><br>
-        <label>Description: <textarea id="description" required></textarea></label><br>
-        <label>Thumbnail: <input type="file" id="thumbnail" accept="image/*" required></label><br>
-        <label>Video File: <input type="file" id="video" accept="video/mp4" required></label><br>
-        <progress id="progress" value="0" max="100"></progress>
-        <span id="progress_text">0%</span><br>
-        <button type="submit">Upload</button>
-    </form>
+
+<div class="container">
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <form method="get" action="index.php">
+            <input type="text" name="search" placeholder="Search videos..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+            <button type="submit"><i class="fas fa-search"></i></button>
+        </form>
+    </div>
+
+    <?php
+    // Get the search keyword if it exists
+    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+
+    // Modify the SQL query to include the search condition
+    $stmt = $pdo->prepare("SELECT * FROM videos WHERE title LIKE :search OR description LIKE :search ORDER BY upload_date DESC");
+    $stmt->execute(['search' => "%$search%"]);
+    $videos = $stmt->fetchAll();
+
+    // Check if any videos match the search
+    if (count($videos) > 0):
+        foreach ($videos as $video):
+    ?>
+        <div class="video-list-item">
+            <img src="<?php echo htmlspecialchars($video['thumbnail']); ?>" alt="Thumbnail">
+            <div class="video-details">
+                <h3><?php echo htmlspecialchars($video['title']); ?></h3>
+                <p><?php echo htmlspecialchars($video['description']); ?></p>
+                <a href="watch.php?id=<?php echo $video['id']; ?>"><i class="fas fa-play"></i> Watch</a>
+            </div>
+        </div>
+    <?php
+        endforeach;
+    else:
+        echo "<p>No videos found.</p>";
+    endif;
+    ?>
+</div>
+
 </body>
 </html>
