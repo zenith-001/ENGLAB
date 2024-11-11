@@ -32,7 +32,7 @@
     if (count($videos) > 0):
         foreach ($videos as $video):
     ?>
-        <div class="video-list-item">
+        <div onclick="location.href='watch.php?id=<?php echo $video['id']; ?>'"  class="video-list-item">
             <img src="<?php echo htmlspecialchars($video['thumbnail']); ?>" alt="Thumbnail">
             <div class="video-details">
                 <h3><?php echo htmlspecialchars($video['title']); ?></h3>
