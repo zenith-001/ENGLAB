@@ -4,41 +4,43 @@
     <meta charset="UTF-8">
     <title>Upload Video</title>
     <script>
-        function uploadFile() {
-            var fileInput = document.getElementById("video");
-            var thumbnailInput = document.getElementById("thumbnail");
-            var formData = new FormData();
-            formData.append("video", fileInput.files[0]);
-            formData.append("thumbnail", thumbnailInput.files[0]);
-            formData.append("title", document.getElementById("title").value);
-            formData.append("description", document.getElementById("description").value);
+    function uploadFile() {
+        var fileInput = document.getElementById("video");
+        var thumbnailInput = document.getElementById("thumbnail");
+        var formData = new FormData();
+        formData.append("video", fileInput.files[0]);
+        formData.append("thumbnail", thumbnailInput.files[0]);
+        formData.append("title", document.getElementById("title").value);
+        formData.append("description", document.getElementById("description").value);
 
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", "upload.php", true);
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "upload.php", true);
 
-            xhr.upload.addEventListener("progress", function(event) {
-                if (event.lengthComputable) {
-                    var percent = (event.loaded / event.total) * 100;
-                    document.getElementById("progress").value = percent;
-                    document.getElementById("progress_text").innerText = Math.round(percent) + "%";
-                }
-            });
+        xhr.upload.addEventListener("progress", function(event) {
+            if (event.lengthComputable) {
+                var percent = (event.loaded / event.total) * 100;
+                document.getElementById("progress").value = percent;
+                document.getElementById("progress_text").innerText = Math.round(percent) + "%";
+            }
+        });
 
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    alert("Video uploaded successfully");
-                    window.location.href = 'index.php';
-                } else {
-                    alert("Upload failed");
-                }
-            };
-            xhr.send(formData);
-        }
-    </script>
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                alert("Video uploaded successfully");
+                window.location.href = 'index.php';
+            } else {
+                // Display the server's error message
+                alert("Upload failed: " + xhr.responseText);
+            }
+        };
+
+        xhr.send(formData);
+    }
+</script>
     <link rel="stylesheet" href="style.css">
-    </head>
+</head>
 <body>
-<nav class="navbar">
+    <nav class="navbar">
         <a href="index.php"><i class="fas fa-upload"></i> Upload</a>
         <a href="index.php"><i class="fas fa-list"></i> Video List</a>
         <a href="admin.php?admin=true"><i class="fas fa-user-shield"></i> Admin</a>
