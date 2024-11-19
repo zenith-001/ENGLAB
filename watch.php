@@ -27,4 +27,5 @@ $video = $stmt->fetch();
     </video>
     <p><?php echo htmlspecialchars($video['description']); ?></p>
 </body>
+
 </html>
