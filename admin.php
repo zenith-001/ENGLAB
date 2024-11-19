@@ -12,9 +12,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Fetch the video_path and thumbnail before deleting
         $sql = "SELECT video_path, thumbnail FROM videos WHERE id = ?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$id]);
-        $video = $stmt->fetch();
+        $stmt = $connection->prepare($sql);
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $video = $stmt->get_result()->fetch_assoc();
 
         // Check if the video exists and the paths are valid
         if ($video) {
@@ -28,23 +29,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Now delete the record from the database
             $sql = "DELETE FROM videos WHERE id = ?";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$id]);
+            $stmt = $connection->prepare($sql);
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
         }
     } elseif (isset($_POST['edit'])) {
         $id = $_POST['id'];
         $title = $_POST['title'];
         $description = $_POST['description'];
         $sql = "UPDATE videos SET title = ?, description = ? WHERE id = ?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$title, $description, $id]);
+        $stmt = $connection->prepare($sql);
+        $stmt->bind_param("ssi", $title, $description, $id);
+        $stmt->execute();
     }
     header("Location: " . $_SERVER['REQUEST_URI']);
 }
 
 $sql = "SELECT * FROM videos";
-$stmt = $pdo->query($sql);
-$videos = $stmt->fetchAll();
+$stmt = $connection->query($sql);
+$videos = $stmt->fetch_all(MYSQLI_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -70,7 +73,7 @@ $videos = $stmt->fetchAll();
         <?php foreach ($videos as $video): ?>
             <li>
                 <form method="post">
-                    <img src="<?php echo $video['thumbnail']; ?>" alt="Thumbnail" height="200">
+                    <img src="<?php echo htmlspecialchars($video['thumbnail']); ?>" alt="Thumbnail" height="200">
                     <input type="hidden" name="id" value="<?php echo $video['id']; ?>">
                     <input type="text" name="title" value="<?php echo htmlspecialchars($video['title']); ?>">
                     <textarea name="description"><?php echo htmlspecialchars($video['description']); ?></textarea>
