@@ -5,79 +5,98 @@ error_reporting(E_ALL);
 
 include 'db.php';
 
-// Check if necessary directories exist, if not, create them
+// FTP server details
+$ftp_server = "localhost:21"; // e.g., "ftp.example.com"
+$ftp_username = "zenith"; // FTP username
+$ftp_password = "your_password"; // FTP password
 $uploadDir = 'uploads';
 $thumbnailDir = 'uploads/thumbnails';
 
-if (!is_dir($uploadDir) && !mkdir($uploadDir, 0777, true)) {
-    http_response_code(500);
-    die("Failed to create uploads directory.");
+// Connect to FTP server
+$conn_id = ftp_connect($ftp_server) or die("Couldn't connect to $ftp_server");
+if (!ftp_login($conn_id, $ftp_username, $ftp_password)) {
+    die("Couldn't connect as $ftp_username");
 }
-if (!is_dir($thumbnailDir) && !mkdir($thumbnailDir, 0777, true)) {
-    http_response_code(500);
-    die("Failed to create thumbnails directory.");
+
+// Create directories if they don't exist
+if (!ftp_nlist($conn_id, $uploadDir)) {
+    ftp_mkdir($conn_id, $uploadDir);
+}
+if (!ftp_nlist($conn_id, $thumbnailDir)) {
+    ftp_mkdir($conn_id, $thumbnailDir);
 }
 
 $title = $_POST['title'];
 $description = $_POST['description'];
 
 // Insert video details into the database to get the unique ID
-try {
-    $sql = "INSERT INTO videos (title, description, thumbnail, video_path) VALUES (?, ?, ?, ?)";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$title, $description, '', '']); // Use '' as a placeholder for both thumbnail and video_path
-    
+$sql = "INSERT INTO videos (title, description, thumbnail, video_path) VALUES (?, ?, '', '')";
+$stmt = $connection->prepare($sql);
+$stmt->bind_param("ss", $title, $description);
+$stmt->execute();
 
-    // Get the last inserted ID
-    $lastId = $pdo->lastInsertId();
-} catch (PDOException $e) {
-    http_response_code(500);
-    die("Database insertion failed: " . $e->getMessage());
+// Check for errors
+if ($stmt->error) {
+    die("Database insertion failed: " . $stmt->error);
 }
+
+// Get the last inserted ID
+$lastId = $connection->insert_id;
 
 // Generate a unique base name for both video and thumbnail using the ID
 $uniqueBaseName = $uploadDir . '/' . $lastId;
 
 // Handle video upload
 $videoPath = $uniqueBaseName . '.mp4';
-if (!move_uploaded_file($_FILES['video']['tmp_name'], $videoPath)) {
+if (!ftp_put($conn_id, $videoPath, $_FILES['video']['tmp_name'], FTP_BINARY)) {
     http_response_code(400);
-    die("Video upload failed. Error moving file to $videoPath");
+    die("Video upload failed via FTP.");
 }
 
-// Handle thumbnail upload and conversion to WebP
+// Handle thumbnail upload
 $thumbnailTempPath = $_FILES['thumbnail']['tmp_name'];
+$webpThumbnailPath = $thumbnailDir . '/' . $lastId . '.webp';
+
+// Resize and convert thumbnail to WebP format
 $thumbnailImage = imagecreatefromstring(file_get_contents($thumbnailTempPath));
-
 if ($thumbnailImage !== false) {
-    // Set the path for the compressed WebP thumbnail using the ID
-    $webpThumbnailPath = $thumbnailDir . '/' . $lastId . '.webp';
-
     // Resize the image to a smaller size (adjust dimensions as needed)
     $width = 200;  // New width
     $height = 200; // New height
     $resizedImage = imagescale($thumbnailImage, $width, $height);
 
-    // Save the resized image as a WebP file
-    if (imagewebp($resizedImage, $webpThumbnailPath, 80)) { // 80 is the quality (0-100)
+    // Save the resized image as a WebP file locally
+    if (imagewebp($resizedImage, $webpThumbnailPath, 80)) {
+        // Upload the WebP thumbnail to the FTP server
+        if (!ftp_put($conn_id, $webpThumbnailPath, $webpThumbnailPath, FTP_BINARY)) {
+            http_response_code(400);
+            die("Thumbnail upload failed via FTP.");
+        }
+
         // Free up memory
         imagedestroy($thumbnailImage);
         imagedestroy($resizedImage);
 
         // Update the video record with paths for video and thumbnail
         $sql = "UPDATE videos SET thumbnail = ?, video_path = ? WHERE id = ?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$webpThumbnailPath, $videoPath, $lastId]);
+        $stmt = $connection->prepare($sql);
+        $stmt->bind_param("ssi", $webpThumbnailPath, $videoPath, $lastId);
+        $stmt->execute();
     } else {
-        // Handle error if saving WebP file fails
         http_response_code(400);
         die("Thumbnail upload failed during image saving.");
     }
 } else {
-    // Handle error - thumbnail image creation failed
     http_response_code(400);
     die("Thumbnail upload failed. Could not process image.");
 }
 
+// Close the FTP connection
+ftp_close($conn_id);
+
+// Close the database connection
+$connection->close();
+
 http_response_code(200);
 echo "Video and thumbnail uploaded successfully!";
+?>

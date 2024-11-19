@@ -4,10 +4,14 @@ $dbname = 'video_db';
 $username = 'root'; // Update if needed
 $password = ''; // Update if needed
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Could not connect to the database: " . $e->getMessage());
+// Create connection
+$connection = new mysqli($host, $username, $password, $dbname);
+
+// Check connection
+if ($connection->connect_error) {
+    die("Connection failed: " . $connection->connect_error);
 }
+
+// Set the connection to return results as associative arrays
+$connection->set_charset("utf8");
 ?>
