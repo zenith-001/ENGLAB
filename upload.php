@@ -21,12 +21,16 @@ function logError($message) {
 }
 
 // Connect to FTP server
-$conn_id = ftp_connect($ftp_server) or die("Couldn't connect to $ftp_server");
+$conn_id = ftp_connect($ftp_server);
+if (!$conn_id) {
+    logError("Couldn't connect to FTP server: $ftp_server. Check if the hostname is correct and reachable.");
+    die("Couldn't connect to FTP server: $ftp_server.");
+}
+
 if (!ftp_login($conn_id, $ftp_username, $ftp_password)) {
     logError("Couldn't connect as $ftp_username");
     die("Couldn't connect as $ftp_username");
 }
-
 // Create directories if they don't exist
 if (!ftp_nlist($conn_id, $uploadDir)) {
     ftp_mkdir($conn_id, $uploadDir);
