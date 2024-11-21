@@ -12,9 +12,18 @@ $ftp_password = "your_password"; // FTP password
 $uploadDir = 'uploads';
 $thumbnailDir = 'uploads/thumbnails';
 
+// Function to log errors
+function logError($message) {
+    $logFile = 'upload_errors.log'; // Log file path
+    $currentDateTime = date('Y-m-d H:i:s');
+    $logMessage = "[$currentDateTime] ERROR: $message" . PHP_EOL;
+    file_put_contents($logFile, $logMessage, FILE_APPEND);
+}
+
 // Connect to FTP server
 $conn_id = ftp_connect($ftp_server) or die("Couldn't connect to $ftp_server");
 if (!ftp_login($conn_id, $ftp_username, $ftp_password)) {
+    logError("Couldn't connect as $ftp_username");
     die("Couldn't connect as $ftp_username");
 }
 
@@ -37,6 +46,7 @@ $stmt->execute();
 
 // Check for errors
 if ($stmt->error) {
+    logError("Database insertion failed: " . $stmt->error);
     die("Database insertion failed: " . $stmt->error);
 }
 
@@ -49,6 +59,7 @@ $uniqueBaseName = $uploadDir . '/' . $lastId;
 // Handle video upload
 $videoPath = $uniqueBaseName . '.mp4';
 if (!ftp_put($conn_id, $videoPath, $_FILES['video']['tmp_name'], FTP_BINARY)) {
+    logError("Video upload failed via FTP.");
     http_response_code(400);
     die("Video upload failed via FTP.");
 }
@@ -69,6 +80,7 @@ if ($thumbnailImage !== false) {
     if (imagewebp($resizedImage, $webpThumbnailPath, 80)) {
         // Upload the WebP thumbnail to the FTP server
         if (!ftp_put($conn_id, $webpThumbnailPath, $webpThumbnailPath, FTP_BINARY)) {
+            logError("Thumbnail upload failed via FTP.");
             http_response_code(400);
             die("Thumbnail upload failed via FTP.");
         }
@@ -83,10 +95,12 @@ if ($thumbnailImage !== false) {
         $stmt->bind_param("ssi", $webpThumbnailPath, $videoPath, $lastId);
         $stmt->execute();
     } else {
+        logError("Thumbnail upload failed during image saving.");
         http_response_code(400);
         die("Thumbnail upload failed during image saving.");
     }
 } else {
+    logError("Thumbnail upload failed. Could not process image.");
     http_response_code(400);
     die("Thumbnail upload failed. Could not process image.");
 }
