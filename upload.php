@@ -6,9 +6,9 @@ error_reporting(E_ALL);
 include 'db.php';
 
 // FTP server details
-$ftp_server = "localhost:21"; // e.g., "ftp.example.com"
+$ftp_server = "localhost"; // e.g., "ftp.example.com"
 $ftp_username = "zenith"; // FTP username
-$ftp_password = "your_password"; // FTP password
+$ftp_password = "8038@Zenith"; // FTP password
 $uploadDir = 'uploads';
 $thumbnailDir = 'uploads/thumbnails';
 
