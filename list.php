@@ -29,26 +29,22 @@
 
             xhr.send(formData);
             checkUploadProgress(); // Start checking upload progress
-        }
-        function checkUploadProgress() {
+        } function checkUploadProgress() {
+            console.log("Checking upload progress..."); // Add this line
             const progressBar = document.getElementById('progress-bar');
-
             const interval = setInterval(() => {
                 fetch('progress.php')
                     .then(response => response.json())
                     .then(data => {
+                        console.log("Progress data received:", data); // Log the received data
                         progressBar.style.width = data.progress + '%';
                         progressBar.innerText = Math.round(data.progress) + '%';
-
-                        if (data.progress >= 100) {
-                            clearInterval(interval); // Stop checking when upload is complete
-                        }
-                    })
+                    });
                     .catch(error => {
                         console.error("Error fetching progress:", error);
                         clearInterval(interval); // Stop checking on error
                     });
-            }, 1000); // Check progress every second
+        }, 1000); // Check progress every second
         }
     </script>
 </head>

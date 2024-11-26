@@ -26,12 +26,8 @@ function logError($message)
 // Function to update progress
 function updateProgress($percent)
 {
-    $_SESSION['upload_progress'] = $percent;
-    // Log the progress for debugging
-    logError("Upload progress: " . $percent . "%");
-
-
-    
+    $_SESSION['upload_progress'] = $percent; // Store the percentage directly
+    logError("Upload progress: " . $percent . "%"); // Log as percentage
 }
 // Connect to FTP server
 $conn_id = ftp_connect($ftp_server);
@@ -82,18 +78,34 @@ if (!$handle) {
     logError("Failed to open local file for reading.");
     die("Failed to open local file for reading.");
 }
-
 $uploadedSize = 0;
+$handle = fopen($localFile, 'rb');
+
+if (!$handle) {
+    logError("Failed to open local file for reading.");
+    die("Failed to open local file for reading.");
+}
+
 while (!feof($handle)) {
     $buffer = fread($handle, 8192); // Read in chunks
-    $uploadedSize += strlen($buffer);
-    updateProgress(($uploadedSize / $fileSize) * 100); // Update progress
+    $bufferSize = strlen($buffer);
+    $uploadedSize += $bufferSize;
 
-    if (!ftp_fput($conn_id, $videoPath, $handle, FTP_BINARY)) {
+    // Use a temporary file to write the buffer
+    $tempFile = tempnam(sys_get_temp_dir(), 'upload_');
+    file_put_contents($tempFile, $buffer);
+
+    // Upload the temporary file
+    if (!ftp_put($conn_id, $videoPath, $tempFile, FTP_BINARY)) {
         logError("Video upload failed via FTP.");
         fclose($handle);
+        unlink($tempFile); // Clean up the temporary file
         die("Video upload failed via FTP.");
     }
+
+    // Update progress
+    updateProgress(($uploadedSize / $fileSize) * 100); // Update progress
+    unlink($tempFile); // Clean up the temporary file
 }
 
 fclose($handle);
