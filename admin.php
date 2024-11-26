@@ -64,7 +64,7 @@ $videos = $stmt->fetch_all(MYSQLI_ASSOC);
 </head>
 <body>
     <nav class="navbar">
-        <a href="index.php"><i class="fas fa-upload"></i> Upload</a>
+        <a href="list.php"><i class="fas fa-upload"></i> Upload</a>
         <a href="index.php"><i class="fas fa-list"></i> Video List</a>
         <a href="admin.php?admin=true"><i class="fas fa-user-shield"></i> Admin</a>
     </nav>

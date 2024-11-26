@@ -333,3 +333,12 @@ button{
 .search-bar button:hover {
     background-color: #45a049;
 }
+
+#progress-bar {
+    width: 0;
+    height: 20px;
+    background-color: green;
+    text-align: center;
+    color: white;
+    transition: width 0.1s; /* Smooth transition */
+}
